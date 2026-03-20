@@ -2,16 +2,28 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { getVersion } from '@tauri-apps/api/app';
 	import { settings, DEFAULT_FONTS, type OSType } from '../stores/settings.svelte.js';
-	import { fade, scale } from 'svelte/transition';
+	import { fade, scale, fly } from 'svelte/transition';
 
 	let {
 		show = false,
 		theme = 'system',
 		onSetTheme,
 		onclose,
-	} = $props<{ show?: boolean; theme?: 'system' | 'dark' | 'light'; onSetTheme?: (t: 'system' | 'dark' | 'light') => void; onclose: () => void }>();
+	} = $props<{ show?: boolean; theme?: string; onSetTheme?: (t: string) => void; onclose: () => void }>();
 
 	let activeCategory = $state<'editor' | 'preview' | 'appearance'>('editor');
+	let highlightMenuOpen = $state(false);
+	const highlightColors = [
+		{ value: 'default', label: 'Default', color: 'var(--color-accent-fg)' },
+		{ value: 'yellow', label: 'Yellow', color: '#ffd000' },
+		{ value: 'orange', label: 'Orange', color: '#ff8c00' },
+		{ value: 'red', label: 'Red', color: '#ff3c3c' },
+		{ value: 'pink', label: 'Pink', color: '#ff69b4' },
+		{ value: 'purple', label: 'Purple', color: '#a46cf4' },
+		{ value: 'blue', label: 'Blue', color: '#438af3' },
+		{ value: 'cyan', label: 'Cyan', color: '#2bb9b2' },
+		{ value: 'green', label: 'Green', color: '#4db158' }
+	];
 	let systemFonts = $state<string[]>([]);
 	let loaded = $state(false);
 	let settingsModal = $state<HTMLDivElement>();
@@ -19,6 +31,17 @@
 	let appVersion = $state<string>('');
 	let osType = $state<OSType>('unknown');
 	let defaultFonts = $derived(DEFAULT_FONTS[osType] || DEFAULT_FONTS.unknown);
+	let savedVscodeThemes = $state<string[]>([]);
+	let themeImportUrl = $state('');
+	let importingTheme = $state(false);
+
+	async function loadVscodeThemes() {
+		try {
+			savedVscodeThemes = await invoke('get_saved_vscode_themes');
+		} catch (e) {
+			console.error('Failed to load vscode themes:', e);
+		}
+	}
 
 	async function loadFonts() {
 		if (loaded) return;
@@ -50,6 +73,7 @@
 					.then((v) => (appVersion = v))
 					.catch(console.error);
 			}
+			loadVscodeThemes();
 			previousActiveElement = document.activeElement as HTMLElement;
 			setTimeout(() => {
 				const firstFocusable = settingsModal?.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])') as HTMLElement | null;
@@ -92,6 +116,32 @@
 		} else if (document.activeElement === last) {
 			e.preventDefault();
 			first.focus();
+		}
+	}
+
+	async function importVscodeTheme() {
+		if (!themeImportUrl) return;
+		importingTheme = true;
+		try {
+			const name = await invoke('fetch_vscode_theme', { url: themeImportUrl });
+			themeImportUrl = '';
+			await loadVscodeThemes();
+			onSetTheme?.(`vscode:${name}` as any);
+		} catch (e) {
+			console.error('Failed to import theme:', e);
+			alert(`Failed to import theme: ${e}`);
+		} finally {
+			importingTheme = false;
+		}
+	}
+
+	async function deleteTheme(name: string) {
+		try {
+			await invoke('delete_vscode_theme', { name });
+			if (theme === `vscode:${name}`) onSetTheme?.('system');
+			await loadVscodeThemes();
+		} catch (e) {
+			console.error('Failed to delete theme:', e);
 		}
 	}
 </script>
@@ -200,8 +250,8 @@
 					</div>
 				</nav>
 
-				<div class="settings-panel">
-					{#if activeCategory === 'editor'}
+					<div class="settings-panel" onclick={() => { highlightMenuOpen = false; }}>
+						{#if activeCategory === 'editor'}
 						<div class="settings-group">
 							<div class="settings-group-header">
 								<h2>Editor Settings</h2>
@@ -307,6 +357,14 @@
 									<span class="toggle-slider"></span>
 								</label>
 							</div>
+
+							<div class="setting-item">
+								<label for="editor-line-highlight">Line Highlight</label>
+								<label class="toggle">
+									<input id="editor-line-highlight" type="checkbox" checked={settings.renderLineHighlight === 'line'} onchange={() => settings.toggleLineHighlight()} />
+									<span class="toggle-slider"></span>
+								</label>
+							</div>
 						</div>
 					{:else if activeCategory === 'preview'}
 						<div class="settings-group">
@@ -402,24 +460,67 @@
 						<div class="settings-group">
 							<h2>Appearance Settings</h2>
 
-							<div class="setting-item">
-								<label for="appearance-theme">Theme</label>
-								<div class="select-wrapper">
-									<select id="appearance-theme" value={theme} onchange={(e) => onSetTheme?.(e.currentTarget.value as any)}>
-										<option value="system">System</option>
-										<option value="light">Light</option>
-										<option value="dark">Dark</option>
-									</select>
-									<svg
-										class="select-arrow"
-										width="12"
-										height="12"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="2"
-										stroke-linecap="round"
-										stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+							<div class="setting-item" style="align-items: flex-start; padding-top: 16px;">
+								<label for="appearance-theme" style="margin-top: 6px;">Theme</label>
+								<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+									<div class="select-wrapper">
+										<select id="appearance-theme" value={theme} onchange={(e) => onSetTheme?.(e.currentTarget.value as any)}>
+											<option value="system">System</option>
+											<option value="light">Default Light</option>
+											<option value="dark">Default Dark</option>
+											{#if savedVscodeThemes.length > 0}
+												<optgroup label="VS Code Themes">
+													{#each savedVscodeThemes as t}
+														<option value={`vscode:${t}`}>{t}</option>
+													{/each}
+												</optgroup>
+											{/if}
+										</select>
+										<svg
+											class="select-arrow"
+											width="12"
+											height="12"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+											stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+									</div>
+									{#if theme.startsWith('vscode:')}
+										<button class="reset-text-btn" style="color: var(--color-danger-fg); font-size: 12px; padding: 0;" onclick={() => deleteTheme(theme.replace('vscode:', ''))}>
+											Delete selected theme
+										</button>
+									{/if}
+								</div>
+							</div>
+
+							<div class="setting-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+								<div style="display: flex; justify-content: space-between; width: 100%;">
+									<label for="theme-import">Import VS Code Theme</label>
+									<button
+										class="reset-text-btn"
+										onclick={() =>
+											import('@tauri-apps/plugin-opener')
+												.then((m) => m.openUrl('https://vscodethemes.com/'))
+												.catch(() => window.open('https://vscodethemes.com/', '_blank'))}
+									>
+										Browse themes
+									</button>
+								</div>
+								<div style="display: flex; gap: 8px; width: 100%;">
+									<input 
+										type="text" 
+										id="theme-import" 
+										class="text-input" 
+										style="flex: 1;" 
+										placeholder="https://vscodethemes.com/e/..." 
+										bind:value={themeImportUrl} 
+										onkeydown={e => e.key === 'Enter' && importVscodeTheme()}
+									/>
+									<button class="import-btn" onclick={importVscodeTheme} disabled={importingTheme || !themeImportUrl}>
+										{importingTheme ? 'Importing...' : 'Import'}
+									</button>
 								</div>
 							</div>
 
@@ -432,11 +533,52 @@
 							</div>
 
 							<div class="setting-item">
-								<label for="appearance-line-highlight">Line Highlight</label>
+								<label for="appearance-restore-state">Restore State on Reopen</label>
 								<label class="toggle">
-									<input id="appearance-line-highlight" type="checkbox" checked={settings.renderLineHighlight === 'line'} onchange={() => settings.toggleLineHighlight()} />
+									<input id="appearance-restore-state" type="checkbox" checked={settings.restoreStateOnReopen} onchange={() => settings.toggleRestoreStateOnReopen()} />
 									<span class="toggle-slider"></span>
 								</label>
+							</div>
+
+							<div class="setting-item">
+								<label for="appearance-toc">Show Table of Contents</label>
+								<label class="toggle">
+									<input id="appearance-toc" type="checkbox" checked={settings.showToc} onchange={() => settings.toggleToc()} />
+									<span class="toggle-slider"></span>
+								</label>
+							</div>
+
+							<div class="setting-item">
+								<label for="appearance-highlight-color">Highlight Color</label>
+								<div class="custom-dropdown-wrapper">
+									<button 
+										class="custom-dropdown-btn" 
+										onclick={(e) => { e.stopPropagation(); highlightMenuOpen = !highlightMenuOpen; }}>
+										<div style="display: flex; align-items: center; gap: 8px;">
+											<div class="color-circle" style="background-color: {highlightColors.find(c => c.value === settings.highlightColor)?.color || 'var(--color-accent-fg)'}"></div>
+											<span>{highlightColors.find(c => c.value === settings.highlightColor)?.label || 'Default'}</span>
+										</div>
+										<svg class="select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+									</button>
+									{#if highlightMenuOpen}
+										<div class="custom-dropdown-menu" transition:fly={{ y: 5, duration: 150 }} onclick={(e) => e.stopPropagation()}>
+											{#each highlightColors as color, index}
+												{#if index === 1}
+													<div class="theme-menu-divider" style="height: 1px; background-color: var(--color-border-muted); margin: 4px 0; transform: scaleY(0.5);"></div>
+												{/if}
+												<button 
+													class="custom-dropdown-option {settings.highlightColor === color.value ? 'selected' : ''}" 
+													onclick={() => {
+														settings.highlightColor = color.value;
+														highlightMenuOpen = false;
+													}}>
+													<div class="color-circle" style="background-color: {color.color}"></div>
+													<span>{color.label}</span>
+												</button>
+											{/each}
+										</div>
+									{/if}
+								</div>
 							</div>
 
 							<div class="setting-item">
@@ -554,7 +696,7 @@
 
 	.nav-item.active {
 		background: var(--color-accent-fg);
-		color: white;
+		color: var(--color-btn-fg);
 	}
 
 	.nav-footer {
@@ -775,6 +917,41 @@
 		background: var(--color-border-muted);
 	}
 
+	.text-input {
+		background: var(--color-canvas-default);
+		border: 1px solid var(--color-border-default);
+		border-radius: 6px;
+		color: var(--color-fg-default);
+		padding: 6px 10px;
+		font-size: 13px;
+		outline: none;
+	}
+
+	.text-input:focus {
+		border-color: var(--color-accent-fg);
+	}
+
+	.import-btn {
+		background: var(--color-canvas-subtle);
+		border: 1px solid var(--color-border-default);
+		border-radius: 6px;
+		color: var(--color-fg-default);
+		padding: 6px 12px;
+		font-size: 13px;
+		cursor: pointer;
+		outline: none;
+		transition: all 0.1s;
+	}
+
+	.import-btn:hover:not(:disabled) {
+		background: var(--color-border-default);
+	}
+
+	.import-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
 	.spin-btn.minus {
 		border-right: 1px solid var(--color-border-default);
 	}
@@ -842,6 +1019,79 @@
 
 	.toggle input:checked + .toggle-slider:before {
 		transform: translateX(20px);
-		background-color: white;
+		background-color: var(--color-btn-fg);
+	}
+	.custom-dropdown-wrapper {
+		position: relative;
+		min-width: 140px;
+	}
+
+	.custom-dropdown-btn {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 4px 8px;
+		background-color: var(--color-canvas-default);
+		border: 1px solid var(--color-border-default);
+		border-radius: 4px;
+		color: var(--color-fg-default);
+		font-size: 13px;
+		font-family: inherit;
+		cursor: pointer;
+		outline: none;
+	}
+	.custom-dropdown-btn:hover {
+		background-color: var(--color-canvas-subtle);
+	}
+
+	.custom-dropdown-menu {
+		position: absolute;
+		top: 100%;
+		right: 0;
+		margin-top: 4px;
+		background-color: var(--color-canvas-default);
+		border: 1px solid var(--color-border-default);
+		border-radius: 6px;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+		padding: 4px;
+		display: flex;
+		flex-direction: column;
+		min-width: 140px;
+		z-index: 10005;
+		gap: 1px;
+	}
+
+	.custom-dropdown-option {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		background: transparent;
+		border: none;
+		text-align: left;
+		padding: 6px 12px;
+		font-size: 13px;
+		color: var(--color-fg-default);
+		cursor: pointer;
+		border-radius: 4px;
+		font-family: inherit;
+		width: 100%;
+	}
+
+	.custom-dropdown-option:hover {
+		background-color: var(--color-canvas-subtle);
+	}
+
+	.custom-dropdown-option.selected {
+		background-color: var(--color-canvas-subtle);
+		font-weight: 500;
+	}
+
+	.color-circle {
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		flex-shrink: 0;
+		border: 1px solid rgba(128, 128, 128, 0.4);
 	}
 </style>
