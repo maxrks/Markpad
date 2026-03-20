@@ -136,12 +136,12 @@ jobs:
 
       - name: Publish to Chocolatey
         if: matrix.platform == 'windows-latest' && matrix.arch == 'x64'
+        continue-on-error: true
         shell: pwsh
         env:
           CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
         run: |
           choco apikey --key $env:CHOCO_API_KEY --source https://push.chocolatey.org/
-          choco push markpad-app.${{ needs.create-release.outputs.version }}.nupkg --source https://push.chocolatey.org/
           choco push markpad-app.${{ needs.create-release.outputs.version }}.nupkg --source https://push.chocolatey.org/
 
       # --- Windows Build (ARM64) ---
