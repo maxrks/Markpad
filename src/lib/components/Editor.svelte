@@ -634,112 +634,96 @@
 			},
 		);
 
-		// paste-to-link: override Ctrl+V to wrap selected text in a markdown link
+		// clipboard handling: override Ctrl+C and Ctrl+V to use Rust backend
+		editor.addAction({
+			id: "custom-copy",
+			label: "Copy",
+			keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC],
+			run: async (ed) => {
+				const selection = ed.getSelection();
+				if (!selection || selection.isEmpty()) return;
+				const model = ed.getModel();
+				if (!model) return;
+				const text = model.getValueInRange(selection);
+				if (text) {
+					await invoke("clipboard_write_text", { text }).catch(console.error);
+				}
+			},
+		});
+
 		editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, async () => {
 			try {
-				// check for image in clipboard
-				const clipboardItems = await navigator.clipboard.read().catch(() => []);
-				for (const item of clipboardItems) {
-					const imageType = item.types.find((t: string) =>
-						t.startsWith("image/"),
-					);
-					if (imageType && tabManager.activeTab?.path) {
-						const blob = await item.getType(imageType);
-						const ext =
-							imageType.split("/")[1] === "jpeg"
-								? "jpg"
-								: imageType.split("/")[1];
-						const filename = `paste_${Date.now()}.${ext}`;
+				// check for image in clipboard via Rust
+				const base64Image = await invoke("clipboard_read_image").catch(() => null) as string | null;
+				if (base64Image && tabManager.activeTab?.path) {
+					const ext = "png"; // output of Rust command is always PNG
+					const filename = `paste_${Date.now()}.${ext}`;
 
-						const tabPath = tabManager.activeTab.path;
-						const dirMatch = tabPath.match(/^(.*)[/\\][^/\\]+$/);
-						if (!dirMatch) break;
+					const tabPath = tabManager.activeTab.path;
+					const dirMatch = tabPath.match(/^(.*)[/\\][^/\\]+$/);
+					if (dirMatch) {
 						const parentDir = dirMatch[1];
-
-						const arrayBuffer = await blob.arrayBuffer();
-						const bytes = new Uint8Array(arrayBuffer);
-						let binary = "";
-						for (let i = 0; i < bytes.length; i++)
-							binary += String.fromCharCode(bytes[i]);
-						const base64 = btoa(binary);
-
 						const relPath = (await invoke("save_image", {
 							parentDir,
 							filename,
-							base64Data: base64,
+							base64Data: base64Image,
 						})) as string;
 						const escapedPath = relPath.replace(/ /g, "%20");
 						const embed = `![alt](${escapedPath})`;
 
 						const position = editor.getPosition();
-						if (!position) break;
-						const selection = editor.getSelection();
-						const range =
-							selection && !selection.isEmpty()
-								? selection
-								: new monaco.Range(
-										position.lineNumber,
-										position.column,
-										position.lineNumber,
-										position.column,
-									);
+						if (position) {
+							const selection = editor.getSelection();
+							const range =
+								selection && !selection.isEmpty()
+									? selection
+									: new monaco.Range(
+											position.lineNumber,
+											position.column,
+											position.lineNumber,
+											position.column,
+										);
 
-						editor.executeEdits("paste-image", [
-							{
-								range,
-								text: embed,
-								forceMoveMarkers: true,
-							},
-						]);
+							editor.executeEdits("paste-image", [
+								{
+									range,
+									text: embed,
+									forceMoveMarkers: true,
+								},
+							]);
 
-						managedImages.push({ embed, filename, parentDir });
-						return;
+							managedImages.push({ embed, filename, parentDir });
+							return;
+						}
 					}
 				}
 
-				// fall through to URL/text paste
-				const rawText = await navigator.clipboard.readText();
-				if (!rawText) {
-					editor.trigger("keyboard", "editor.action.clipboardPasteAction", null);
-					return;
-				}
+				// fall through to text paste via Rust
+				const rawText = await invoke("clipboard_read_text").catch(() => "") as string;
+				if (!rawText) return;
+				
 				const text = rawText.trim();
-
-				const urlRegex =
-					/^(?:(?:https?|obsidian|file|tauri):\/\/|www\.)[^\s]{2,}$/i;
+				const urlRegex = /^(?:(?:https?|obsidian|file|tauri):\/\/|www\.)[^\s]{2,}$/i;
 				const isUrl = urlRegex.test(text);
-
-				if (!isUrl) {
-					editor.trigger(
-						"keyboard",
-						"editor.action.clipboardPasteAction",
-						null,
-					);
-					return;
-				}
 
 				const selections = editor.getSelections();
 				const model = editor.getModel();
 				if (!selections || selections.length === 0 || !model) {
-					editor.trigger(
-						"keyboard",
-						"editor.action.clipboardPasteAction",
-						null,
-					);
+					insertTextAtCursor(rawText);
 					return;
 				}
 
+				// if it's not a URL or we have no multi-line selection/complex case, just insert
 				const hasSelection = selections.some((s) => !s.isEmpty());
+				const isMultiLine = selections.some((s) => s.startLineNumber !== s.endLineNumber);
 
-				const isMultiLine = selections.some(
-					(s) => s.startLineNumber !== s.endLineNumber,
-				);
-				if (isMultiLine) {
-					editor.trigger(
-						"keyboard",
-						"editor.action.clipboardPasteAction",
-						null,
-					);
+				if (!isUrl || isMultiLine) {
+					const edits = selections.map(s => ({
+						range: s,
+						text: rawText,
+						forceMoveMarkers: true
+					}));
+					editor.executeEdits("paste-text", edits);
 					return;
 				}
 
@@ -794,8 +778,8 @@
 					});
 					editor.setSelections(newSelections);
 				}
-			} catch {
-				editor.trigger("keyboard", "editor.action.clipboardPasteAction", null);
+			} catch (err) {
+				console.error("Paste failed:", err);
 			}
 		});
 

@@ -475,6 +475,42 @@ fn get_os_type() -> String {
 
 
 #[tauri::command]
+fn clipboard_write_text(text: String) -> Result<(), String> {
+    let mut clipboard = arboard::Clipboard::new().map_err(|e| e.to_string())?;
+    clipboard.set_text(text).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn clipboard_read_text() -> Result<String, String> {
+    let mut clipboard = arboard::Clipboard::new().map_err(|e| e.to_string())?;
+    clipboard.get_text().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn clipboard_read_image() -> Result<String, String> {
+    let mut clipboard = arboard::Clipboard::new().map_err(|e| e.to_string())?;
+    let image = clipboard.get_image().map_err(|e| e.to_string())?;
+
+    // encode as png
+    let mut png_data = Vec::new();
+    {
+        let encoder = image::codecs::png::PngEncoder::new(&mut png_data);
+        use image::ImageEncoder;
+        encoder
+            .write_image(
+                image.bytes.as_ref(),
+                image.width as u32,
+                image.height as u32,
+                image::ExtendedColorType::Rgba8,
+            )
+            .map_err(|e| e.to_string())?;
+    }
+
+    use base64::{engine::general_purpose, Engine as _};
+    Ok(general_purpose::STANDARD.encode(&png_data))
+}
+
+#[tauri::command]
 fn save_image(parent_dir: String, filename: String, base64_data: String) -> Result<String, String> {
     let img_dir = Path::new(&parent_dir).join("img");
     if !img_dir.exists() {
@@ -736,6 +772,9 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            clipboard_write_text,
+            clipboard_read_text,
+            clipboard_read_image,
             open_markdown,
             render_markdown,
             send_markdown_path,

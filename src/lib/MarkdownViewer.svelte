@@ -610,7 +610,7 @@
 
 				const copyCode = () => {
 					const codeToCopy = codeContent.replace(/\n$/, '');
-					navigator.clipboard.writeText(codeToCopy).then(() => {
+					invoke('clipboard_write_text', { text: codeToCopy }).then(() => {
 						const originalContent = label.innerHTML;
 						label.innerHTML = 'Copied!';
 						label.classList.add('copied');
@@ -1291,8 +1291,18 @@ ${markdownBody?.innerHTML || htmlContent}
 							{ separator: true }
 						]
 					: []),
-				...(hasSelection ? [{ label: 'Copy', onClick: () => document.execCommand('copy') }] : []),
-				{ label: 'Select All', onClick: () => document.execCommand('selectAll') },
+				...(hasSelection ? [{ label: 'Copy', onClick: () => {
+					const selection = window.getSelection()?.toString();
+					if (selection) invoke('clipboard_write_text', { text: selection });
+				} }] : []),
+				{ label: 'Select All', onClick: () => {
+					if (!markdownBody) return;
+					const range = document.createRange();
+					range.selectNodeContents(markdownBody);
+					const selection = window.getSelection();
+					selection?.removeAllRanges();
+					selection?.addRange(range);
+				} },
 				{ separator: true },
 				{ label: 'Open File Location', onClick: openFileLocation, disabled: !currentFile },
 				{ label: 'Edit', onClick: () => toggleEdit() },
