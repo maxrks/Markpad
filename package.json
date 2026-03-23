@@ -21,6 +21,7 @@
 		"@types/dompurify": "^3.0.5",
 		"dompurify": "^3.3.1",
 		"highlight.js": "^11.11.1",
+		"highlightjs-svelte": "^1.0.6",
 		"katex": "^0.16.27",
 		"mermaid": "^11.12.2",
 		"monaco-editor": "^0.55.1",

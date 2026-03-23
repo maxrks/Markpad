@@ -369,8 +369,36 @@
 
 		processBlockIds(doc.body, doc);
 		processTaskItems(doc.body);
+		processInlineMath(doc.body);
 
 		return doc.body.innerHTML;
+	}
+
+	function processInlineMath(root: Element) {
+		const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+			acceptNode(node) {
+				let curr = node.parentElement;
+				while (curr && curr !== root) {
+					if (['CODE', 'PRE', 'SCRIPT', 'STYLE'].includes(curr.tagName)) return NodeFilter.FILTER_REJECT;
+					curr = curr.parentElement;
+				}
+				return NodeFilter.FILTER_ACCEPT;
+			},
+		});
+
+		const toReplace: { node: Text; newText: string }[] = [];
+		let node: Node | null;
+		const regex = /(^|[^\\])\$(?!\s)([^$]*?[^\s\\])\$(?![\d])/g;
+		while ((node = walker.nextNode())) {
+			const text = (node as Text).nodeValue || '';
+			if (text.includes('$')) {
+				const newText = text.replace(regex, "$1\\($2\\)");
+				if (newText !== text) toReplace.push({ node: node as Text, newText });
+			}
+		}
+		for (const { node, newText } of toReplace) {
+			node.nodeValue = newText;
+		}
 	}
 
 	function processHighlights(root: Element) {
@@ -658,7 +686,6 @@
 			renderMathInElement(markdownBody, {
 				delimiters: [
 					{ left: '$$', right: '$$', display: true },
-					{ left: '$', right: '$', display: false },
 					{ left: '\\(', right: '\\)', display: false },
 					{ left: '\\[', right: '\\]', display: true },
 				],
@@ -1656,10 +1683,24 @@ ${markdownBody?.innerHTML || htmlContent}
 		loadRecentFiles();
 
 		// @ts-ignore
-		Promise.all([import('highlight.js'), import('katex'), import('katex/dist/contrib/auto-render'), import('mermaid')]).then(([hljsModule, katexMainModule, katexModule, mermaidModule]) => {
+		Promise.all([import('highlight.js'), import('highlightjs-svelte'), import('katex'), import('mermaid')]).then(async ([hljsModule, svelteModule, katexMainModule, mermaidModule]) => {
 			hljs = hljsModule.default;
+			try {
+				svelteModule.default(hljs);
+			} catch(e) { console.error('svelte hljs error', e); }
+			
 			katex = katexMainModule.default;
-			renderMathInElement = katexModule.default;
+			// some extensions bind to window.katex
+			(window as any).katex = katex;
+			
+			// @ts-ignore
+			const [autoRenderModule] = await Promise.all([
+				import('katex/dist/contrib/auto-render.js'),
+				import('katex/dist/contrib/mhchem.js'),
+				import('katex/dist/contrib/copy-tex.js')
+			]);
+			
+			renderMathInElement = autoRenderModule.default;
 			mermaid = mermaidModule.default;
 		});
 
