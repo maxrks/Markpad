@@ -16,9 +16,24 @@ Jumps to location in document
 
 ---
 
+# Callouts
+
+> [!note] Custom titled callout
+> This is a note callout
+
+> [!tip] Tip: combine ==highlights== with **bold** for emphasis.
+
+> [!IMPORTANT] Nested callouts work too
+> > [!note] Nested callout
+> > This is a nested callout
+> > > [!info] Nested callout
+> > > This is a nested callout
+
+---
+
 # Highlights
 
-You can ==highlight text== inline just like in Obsidian.
+You can ==highlight text== inline.
 
 Multiple ==highlights== can appear ==in the same== paragraph.
 
@@ -50,7 +65,7 @@ Long note name with alias — this demonstrates that the block ID is separate fr
 
 A third paragraph with its own anchor you can reference from the TOC. ^third-anchor
 
-Obsidian-style internal links: [[#important]] jumps to the first paragraph above.
+Internal links: [[#important]] jumps to the first paragraph above.
 
 ---
 
@@ -103,25 +118,6 @@ And level 5.
 
 ---
 
-## GFM Alerts
-
-> [!NOTE]
-> This is a note alert — check if the icon and color are correct.
-
-> [!TIP]
-> Tip: combine ==highlights== with**bold** for emphasis.
-
-> [!IMPORTANT]
-> Block IDs ^block-in-quote are supported inside blockquotes too.
-
-> [!WARNING]
-> Task toggles auto-save to disk — make sure you have write access.
-
-> [!CAUTION]
-> Unchecking a task rewrites the raw markdown file immediately.
-
----
-
 ## Code Blocks
 
 Inline code: `let x = 42;` — `==no highlight here==`
@@ -160,7 +156,7 @@ fn process_highlights(content: &str) -> String {
 | Standard footnotes | `[^ref]` | ✅ |
 | Block IDs | `^id` | ✅ |
 | Task toggle | `- [ ]` click | ✅ |
-| Obsidian links | `[[#heading]]` | ✅ |
+| Wikilinks | `[[#heading]]` | ✅ |
 
 ---
 
@@ -176,7 +172,8 @@ Superscript: x^2 (not supported inline) vs actual footnote^[this is a footnote].
 
 A regular link: [GitHub](https://github.com)
 
-An image: ![Test](https://via.placeholder.com/400x200?text=Test+Image)
+An image:
+![Test](https://picsum.photos/400/200)
 
 ---
 
@@ -227,6 +224,3 @@ graph TD
     B -->|No| D[Debug it]
     D --> B
 ```
-
----
-
