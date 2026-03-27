@@ -16,6 +16,9 @@
 	import Toc from './components/Toc.svelte';
 	import { slide } from 'svelte/transition';
 	import Toast from './components/Toast.svelte';
+	import { exportAsHtml as _exportHtml, exportAsPdf } from './utils/export';
+	import ZoomOverlay from './components/ZoomOverlay.svelte';
+import { processMarkdownHtml } from './utils/markdown';
 
 	const appWindow = getCurrentWindow();
 
@@ -81,6 +84,8 @@
 	// in-page scroll position history for mouse 4/5 nav
 	let scrollHistory: number[] = [];
 	let scrollFuture: number[] = [];
+	let collapsedHeaders = $state(new Set<string>());
+	let zoomData = $state<{ src?: string; html?: string } | null>(null);
 
 	// derived from tab manager
 	let activeTab = $derived(tabManager.activeTab);
@@ -920,7 +925,23 @@
 				}
 			}
 		}
-	}
+
+        // media zoom handling
+        const img = target.closest('img');
+        if (img) {
+            zoomData = { src: img.src };
+            return;
+        }
+
+        const mermaidDiv = target.closest('.mermaid-diagram');
+        if (mermaidDiv) {
+            const svg = mermaidDiv.querySelector('svg');
+            if (svg) {
+                zoomData = { html: svg.outerHTML };
+                return;
+            }
+        }
+    }
 
 	async function toggleTaskCheckbox(checkbox: HTMLInputElement) {
 		const tab = tabManager.activeTab;
@@ -2128,6 +2149,14 @@ ${markdownBody?.innerHTML || htmlContent}
 				onremove={() => toasts = toasts.filter(t => t.id !== toast.id)} />
 		{/each}
 	</div>
+
+	{#if zoomData}
+		<ZoomOverlay 
+			src={zoomData.src} 
+			html={zoomData.html} 
+			onclose={() => zoomData = null} 
+		/>
+	{/if}
 
 	{#if isDragging}
 		<div class="drag-overlay" role="presentation">
