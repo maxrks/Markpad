@@ -56,6 +56,8 @@ export class SettingsStore {
 	showWhitespace = $state(false);
 	startInEditor = $state(false);
 	editorMaxWidth = $state(80);
+	pinnedToc = $state(false);
+	tocSide = $state<'left' | 'right'>('left');
 	osType = $state<OSType>('unknown');
 
 	editorFont = $state('Consolas');
@@ -85,6 +87,8 @@ export class SettingsStore {
 			const savedHighlightColor = localStorage.getItem('editor.highlightColor');
 			const savedStartInEditor = localStorage.getItem('editor.startInEditor');
 			const savedEditorMaxWidth = localStorage.getItem('editor.maxWidth');
+			const savedPinnedToc = localStorage.getItem('editor.pinnedToc');
+			const savedTocSide = localStorage.getItem('editor.tocSide');
 
 			const savedEditorFont = localStorage.getItem('editor.font');
 			const savedEditorFontSize = localStorage.getItem('editor.fontSize');
@@ -117,6 +121,8 @@ export class SettingsStore {
 			if (savedHighlightColor !== null) this.highlightColor = savedHighlightColor;
 			if (savedStartInEditor !== null) this.startInEditor = savedStartInEditor === 'true';
 			if (savedEditorMaxWidth !== null) this.editorMaxWidth = parseFontSize(savedEditorMaxWidth, 80, 20, 500);
+			if (savedPinnedToc !== null) this.pinnedToc = savedPinnedToc === 'true';
+			if (savedTocSide !== null) this.tocSide = savedTocSide as 'left' | 'right';
 			if (savedPreZenState !== null) {
 				try {
 					this.preZenState = JSON.parse(savedPreZenState);
@@ -169,6 +175,8 @@ export class SettingsStore {
 					localStorage.setItem('editor.highlightColor', this.highlightColor);
 					localStorage.setItem('editor.startInEditor', String(this.startInEditor));
 					localStorage.setItem('editor.maxWidth', String(this.editorMaxWidth));
+					localStorage.setItem('editor.pinnedToc', String(this.pinnedToc));
+					localStorage.setItem('editor.tocSide', this.tocSide);
 					localStorage.setItem('editor.font', this.editorFont);
 					localStorage.setItem('editor.fontSize', String(this.editorFontSize));
 					localStorage.setItem('preview.font', this.previewFont);
@@ -271,6 +279,14 @@ export class SettingsStore {
 
 	toggleStartInEditor() {
 		this.startInEditor = !this.startInEditor;
+	}
+
+	togglePinnedToc() {
+		this.pinnedToc = !this.pinnedToc;
+	}
+
+	toggleTocSide() {
+		this.tocSide = this.tocSide === 'left' ? 'right' : 'left';
 	}
 
 	resetEditorMaxWidth() {
