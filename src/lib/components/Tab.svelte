@@ -63,13 +63,19 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="tab {isActive ? 'active' : ''}" class:last={isLast} role="group" title={tab.path || 'Recents'} oncontextmenu={handleContextMenu}>
-	<button class="tab-content-btn" {onclick} onmousedown={handleMiddleClick}>
+	<button class="tab-content-btn" onclick={onclick} onmousedown={(e) => {
+		if (e.button === 0) e.preventDefault();
+		handleMiddleClick(e);
+	}}>
 		<span class="tab-label">
 			{tab.title}
 		</span>
 	</button>
 	<div class="tab-actions">
-		<button class="tab-close" class:dirty={tab.isDirty} onclick={handleClose} onmousedown={(e) => e.stopPropagation()} title="Close (Ctrl+W)">
+		<button class="tab-close" class:dirty={tab.isDirty} onclick={handleClose} onmousedown={(e) => {
+			e.stopPropagation();
+			e.preventDefault();
+		}} title="Close (Ctrl+W)">
 			{#if tab.isDirty}
 				<span class="dirty-dot"></span>
 			{/if}

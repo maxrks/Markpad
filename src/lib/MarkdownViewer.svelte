@@ -425,11 +425,12 @@ import { processMarkdownHtml } from './utils/markdown';
 
 	async function loadMarkdown(filePath: string, options: { navigate?: boolean; skipTabManagement?: boolean; preserveEditState?: boolean } = {}) {
 		showHome = false;
+		let existing = null;
 		try {
 			if (options.navigate && tabManager.activeTab) {
 				tabManager.navigate(tabManager.activeTab.id, filePath);
 			} else if (!options.skipTabManagement) {
-				const existing = tabManager.tabs.find((t) => t.path === filePath);
+				existing = tabManager.tabs.find((t) => t.path === filePath);
 				if (existing) {
 					tabManager.setActive(existing.id);
 				} else if (tabManager.activeTab && tabManager.activeTab.path === '' && !tabManager.activeTab.isDirty && tabManager.activeTab.rawContent.trim() === '') {
@@ -446,7 +447,10 @@ import { processMarkdownHtml } from './utils/markdown';
 			const tab = tabManager.tabs.find((t) => t.id === activeId);
 
 			if (isMarkdown) {
-				if (tab && !options.preserveEditState) tab.isEditing = settings.startInEditor;
+				// Only set default edit mode if it's a brand new tab or we aren't preserving state
+				if (tab && !options.preserveEditState && !existing) {
+					tab.isEditing = settings.startInEditor;
+				}
 				const [html, content] = await Promise.all([
 					invoke('open_markdown', { path: filePath }) as Promise<string>,
 					invoke('read_file_content', { path: filePath }) as Promise<string>

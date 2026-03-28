@@ -908,11 +908,34 @@
 		}
 	});
 
-	let tabSwitchPending = false;
-
 	$effect(() => {
-		if (editor && editor.getValue() !== value && !tabSwitchPending) {
-			editor.setValue(value);
+		const activeTabId = tabManager.activeTabId;
+		const content = value;
+
+		if (!editor) return;
+
+		if (activeTabId !== currentTabId) {
+			if (currentTabId) {
+				const state = editor.saveViewState();
+				tabManager.updateTabEditorState(currentTabId, state);
+			}
+
+			currentTabId = activeTabId;
+			
+			if (editor.getValue() !== content) {
+				editor.setValue(content);
+			}
+
+			if (tabManager.activeTab?.editorViewState) {
+				editor.restoreViewState(tabManager.activeTab.editorViewState);
+			} else {
+				editor.setScrollTop(0);
+				editor.setPosition({ lineNumber: 1, column: 1 });
+			}
+		} else {
+			if (editor.getValue() !== content) {
+				editor.setValue(content);
+			}
 		}
 	});
 
@@ -940,27 +963,7 @@
 			});
 		}
 	});
-	$effect(() => {
-		const activeTabId = tabManager.activeTabId;
-		if (editor && activeTabId !== currentTabId) {
-			if (currentTabId) {
-				const state = editor.saveViewState();
-				tabManager.updateTabEditorState(currentTabId, state);
-			}
-			currentTabId = activeTabId;
 
-			tabSwitchPending = true;
-			if (tabManager.activeTab && editor.getValue() !== tabManager.activeTab.rawContent) {
-				editor.setValue(tabManager.activeTab.rawContent);
-			}
-			if (tabManager.activeTab?.editorViewState) {
-				editor.restoreViewState(tabManager.activeTab.editorViewState);
-			} else {
-				editor.setScrollTop(0);
-			}
-			tabSwitchPending = false;
-		}
-	});
 
 	$effect(() => {
 		if (editor && theme) {

@@ -291,6 +291,7 @@
 				onmouseenter={(e) => {
 					if (!homeMenuOpen) showTooltip(e, 'Menu');
 				}}
+				onmousedown={(e) => e.preventDefault()}
 				onmouseleave={hideTooltip}>
 				<img
 					src={iconUrl}
@@ -450,6 +451,7 @@
 				onmouseenter={(e) => {
 					if (!kebabMenuOpen) showTooltip(e, 'More');
 				}}
+				onmousedown={(e) => e.preventDefault()}
 				onmouseleave={hideTooltip}
 				aria-label="More Actions">
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -472,6 +474,7 @@
 						}}
 						aria-label="Settings"
 						onmouseenter={(e) => showTooltip(e, 'Settings')}
+						onmousedown={(e) => e.preventDefault()}
 						onmouseleave={hideTooltip}
 						transition:fly={{ x: 10, duration: 200 }}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -487,6 +490,7 @@
 							hideTooltip();
 							onresetZoom?.();
 						}}
+						onmousedown={(e) => e.preventDefault()}
 						transition:fly={{ y: -10, duration: 150 }}
 						aria-label="Reset Zoom">
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -504,6 +508,7 @@
 						onclick={() => settings.toggleZenMode()}
 						aria-label="Toggle Zen Mode"
 						onmouseenter={(e) => showTooltip(e, 'Zen mode')}
+						onmousedown={(e) => e.preventDefault()}
 						onmouseleave={hideTooltip}
 						transition:fly={{ x: 10, duration: 200 }}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -525,6 +530,7 @@
 						onclick={() => settings.toggleTabs()}
 						aria-label="{settings.showTabs ? 'Hide' : 'Show'} Tabs"
 						onmouseenter={(e) => showTooltip(e, (settings.showTabs ? 'Hide' : 'Show') + ' tabs', 'Shift+B')}
+						onmousedown={(e) => e.preventDefault()}
 						onmouseleave={hideTooltip}
 						transition:fly={{ x: 10, duration: 200 }}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -541,6 +547,7 @@
 						onclick={ononpenFileLocation}
 						aria-label="Open File Location"
 						onmouseenter={(e) => showTooltip(e, 'Open file location')}
+						onmousedown={(e) => e.preventDefault()}
 						onmouseleave={hideTooltip}
 						transition:fly={{ x: 10, duration: 200 }}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -558,6 +565,7 @@
 						onclick={() => ontoggleSplit?.()}
 						aria-label="Toggle Split View"
 						onmouseenter={(e) => showTooltip(e, 'Split view', 'H')}
+						onmousedown={(e) => e.preventDefault()}
 						onmouseleave={hideTooltip}
 						transition:fly={{ x: 10, duration: 200 }}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -579,6 +587,7 @@
 						onclick={() => ontoggleSync?.()}
 						aria-label="Toggle Scroll Sync"
 						onmouseenter={(e) => showTooltip(e, 'Scroll sync')}
+						onmousedown={(e) => e.preventDefault()}
 						onmouseleave={hideTooltip}
 						transition:fly={{ x: 10, duration: 200 }}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -591,6 +600,7 @@
 						onclick={() => ontoggleFullWidth?.()}
 						aria-label="Toggle Full Width"
 						onmouseenter={(e) => showTooltip(e, 'Toggle full width')}
+						onmousedown={(e) => e.preventDefault()}
 						onmouseleave={hideTooltip}
 						transition:fly={{ x: 10, duration: 200 }}>
 						<svg xmlns="http://www.w3.org/2000/svg" height="14" viewBox="0 -960 960 960" width="14" fill="currentColor"
@@ -604,6 +614,7 @@
 						onclick={ontoggleLiveMode}
 						aria-label="Toggle Auto-Reload"
 						onmouseenter={(e) => showTooltip(e, 'Auto-Reload')}
+						onmousedown={(e) => e.preventDefault()}
 						onmouseleave={hideTooltip}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 							><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path
@@ -617,6 +628,7 @@
 						onclick={ontoggleEdit}
 						aria-label="Edit File (Ctrl+E)"
 						onmouseenter={(e) => showTooltip(e, 'Edit file', 'E')}
+						onmousedown={(e) => e.preventDefault()}
 						onmouseleave={hideTooltip}>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 							><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
@@ -636,6 +648,7 @@
 							onmouseenter={(e) => {
 								if (!themeMenuOpen) showTooltip(e, 'Change Theme');
 							}}
+							onmousedown={(e) => e.preventDefault()}
 							onmouseleave={hideTooltip}
 							transition:fly={{ x: 10, duration: 200 }}>
 							{#if theme === 'light'}
