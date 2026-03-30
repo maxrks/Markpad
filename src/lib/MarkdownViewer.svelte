@@ -1603,6 +1603,10 @@ import { processMarkdownHtml } from './utils/markdown';
 			e.preventDefault();
 			zoomLevel = 100;
 		}
+		if (cmdOrCtrl && key === ',') {
+			e.preventDefault();
+			showSettings = !showSettings;
+		}
 	}
 
 	function pushScrollHistory() {

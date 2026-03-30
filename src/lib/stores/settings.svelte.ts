@@ -59,6 +59,8 @@ export class SettingsStore {
 	pinnedToc = $state(false);
 	tocSide = $state<'left' | 'right'>('left');
 	osType = $state<OSType>('unknown');
+	imageDirectory = $state('img');
+	macosImageScaling = $state(true);
 
 	editorFont = $state('Consolas');
 	editorFontSize = $state(14);
@@ -89,6 +91,8 @@ export class SettingsStore {
 			const savedEditorMaxWidth = localStorage.getItem('editor.maxWidth');
 			const savedPinnedToc = localStorage.getItem('editor.pinnedToc');
 			const savedTocSide = localStorage.getItem('editor.tocSide');
+			const savedImageDirectory = localStorage.getItem('editor.imageDirectory');
+			const savedMacosImageScaling = localStorage.getItem('editor.macosImageScaling');
 
 			const savedEditorFont = localStorage.getItem('editor.font');
 			const savedEditorFontSize = localStorage.getItem('editor.fontSize');
@@ -123,6 +127,8 @@ export class SettingsStore {
 			if (savedEditorMaxWidth !== null) this.editorMaxWidth = parseFontSize(savedEditorMaxWidth, 80, 20, 500);
 			if (savedPinnedToc !== null) this.pinnedToc = savedPinnedToc === 'true';
 			if (savedTocSide !== null) this.tocSide = savedTocSide as 'left' | 'right';
+			if (savedImageDirectory !== null) this.imageDirectory = savedImageDirectory;
+			if (savedMacosImageScaling !== null) this.macosImageScaling = savedMacosImageScaling === 'true';
 			if (savedPreZenState !== null) {
 				try {
 					this.preZenState = JSON.parse(savedPreZenState);
@@ -176,7 +182,9 @@ export class SettingsStore {
 					localStorage.setItem('editor.startInEditor', String(this.startInEditor));
 					localStorage.setItem('editor.maxWidth', String(this.editorMaxWidth));
 					localStorage.setItem('editor.pinnedToc', String(this.pinnedToc));
-					localStorage.setItem('editor.tocSide', this.tocSide);
+				localStorage.setItem('editor.tocSide', this.tocSide);
+				localStorage.setItem('editor.imageDirectory', this.imageDirectory);
+				localStorage.setItem('editor.macosImageScaling', String(this.macosImageScaling));
 					localStorage.setItem('editor.font', this.editorFont);
 					localStorage.setItem('editor.fontSize', String(this.editorFontSize));
 					localStorage.setItem('preview.font', this.previewFont);
@@ -287,6 +295,10 @@ export class SettingsStore {
 
 	toggleTocSide() {
 		this.tocSide = this.tocSide === 'left' ? 'right' : 'left';
+	}
+
+	toggleMacosImageScaling() {
+		this.macosImageScaling = !this.macosImageScaling;
 	}
 
 	resetEditorMaxWidth() {
