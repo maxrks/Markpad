@@ -1,18 +1,18 @@
 !macro MARKPAD_REGISTER_OPEN_WITH EXTENSION
-  WriteRegStr HKCU "Software\Classes\.${EXTENSION}\shell\Open with MarkPad" "" "Open with MarkPad"
-  WriteRegStr HKCU "Software\Classes\.${EXTENSION}\shell\Open with MarkPad" "Icon" "$INSTDIR\Markpad.exe"
-  WriteRegStr HKCU "Software\Classes\.${EXTENSION}\shell\Open with MarkPad\command" "" "$\"$INSTDIR\Markpad.exe$\" $\"%1$\""
+  WriteRegStr HKCU "Software\Classes\.${EXTENSION}\shell\Open with Markpad" "" "Open with Markpad"
+  WriteRegStr HKCU "Software\Classes\.${EXTENSION}\shell\Open with Markpad" "Icon" "$INSTDIR\Markpad.exe"
+  WriteRegStr HKCU "Software\Classes\.${EXTENSION}\shell\Open with Markpad\command" "" "$\"$INSTDIR\Markpad.exe$\" $\"%1$\""
 
-  WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.${EXTENSION}\shell\Open with MarkPad" "" "Open with MarkPad"
-  WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.${EXTENSION}\shell\Open with MarkPad" "Icon" "$INSTDIR\Markpad.exe"
-  WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.${EXTENSION}\shell\Open with MarkPad\command" "" "$\"$INSTDIR\Markpad.exe$\" $\"%1$\""
+  WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.${EXTENSION}\shell\Open with Markpad" "" "Open with Markpad"
+  WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.${EXTENSION}\shell\Open with Markpad" "Icon" "$INSTDIR\Markpad.exe"
+  WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.${EXTENSION}\shell\Open with Markpad\command" "" "$\"$INSTDIR\Markpad.exe$\" $\"%1$\""
 
   WriteRegStr HKCU "Software\Classes\.${EXTENSION}\OpenWithList\Markpad.exe" "" ""
 !macroend
 
 !macro MARKPAD_UNREGISTER_OPEN_WITH EXTENSION
-  DeleteRegKey HKCU "Software\Classes\.${EXTENSION}\shell\Open with MarkPad"
-  DeleteRegKey HKCU "Software\Classes\SystemFileAssociations\.${EXTENSION}\shell\Open with MarkPad"
+  DeleteRegKey HKCU "Software\Classes\.${EXTENSION}\shell\Open with Markpad"
+  DeleteRegKey HKCU "Software\Classes\SystemFileAssociations\.${EXTENSION}\shell\Open with Markpad"
   DeleteRegKey HKCU "Software\Classes\.${EXTENSION}\OpenWithList\Markpad.exe"
 !macroend
 
