@@ -2415,11 +2415,14 @@ import { t } from './utils/i18n.js';
 		box-sizing: border-box;
 		min-width: 200px;
 		margin: 0;
-		padding: 50px clamp(calc(calc(50% - 390px)), 5vw, 50px);
+		padding: 50px clamp(24px, 5vw, 50px);
 		height: 100%;
 		overflow-y: auto;
 		overflow-x: hidden;
 		transform: translate3d(0, 0, 0);
+		max-width: 100%;
+		text-align: left;
+		overflow-wrap: anywhere;
 	}
 
 	.loading-chip {
@@ -2473,7 +2476,7 @@ import { t } from './utils/i18n.js';
 	}
 
 	.markdown-body.full-width {
-		padding: 50px;
+		padding: 50px clamp(24px, 5vw, 50px);
 		max-width: 100%;
 	}
 
